@@ -1,0 +1,140 @@
+---
+title: "Cleaning datasets"
+author: "Reynell Badillo Sarmiento"
+date: "2024-11-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+library(tidyr)
+```
+
+```{r}
+hom_2012 <- read_csv("./2012.csv")
+hom_2013 <- read_csv("./2013.csv")
+hom_2014 <- read_csv("./2014.csv")
+hom_2015 <- read_csv("./2015.csv")
+hom_2016 <- read_csv("./2016.csv")
+hom_2017 <- read_csv("./2017.csv")
+hom_2018 <- read_csv("./2018.csv")
+hom_2019 <- read_csv("./2019.csv")
+hom_2020 <- read_csv("./2020.csv")
+hom_2021 <- read_csv("./2021.csv")
+hom_2022 <- read_csv("./2022.csv")
+hom_2023 <- read_csv("./2023.csv")
+```
+
+```{r}
+## This is a function to expand the "quantity" column and separate the date
+## 
+expand_data <- function(data, date_col, quantity_col, sep = "/") {
+  expanded_data <- data |> 
+    uncount(!!sym(quantity_col)) |> 
+    separate(!!sym(date_col), into = c("day", "month", "year"), sep = sep)
+  
+  return(expanded_data)
+}
+```
+
+```{r}
+expanded_2012 <- expand_data(hom_2012, "date", "quantity")
+expanded_2013 <- expand_data(hom_2013, "date", "quantity")
+expanded_2014 <- expand_data(hom_2014, "date", "quantity")
+expanded_2015 <- expand_data(hom_2015, "date", "quantity")
+expanded_2016 <- expand_data(hom_2016, "date", "quantity")
+expanded_2017 <- expand_data(hom_2017, "date", "quantity")
+expanded_2018 <- expand_data(hom_2018, "date", "quantity")
+expanded_2019 <- expand_data(hom_2019, "date", "quantity")
+expanded_2020 <- expand_data(hom_2020, "date", "quantity")
+expanded_2021 <- expand_data(hom_2021, "date", "quantity")
+expanded_2022 <- expand_data(hom_2022, "date", "quantity")
+expanded_2023 <- expand_data(hom_2023, "date", "quantity")
+
+```
+
+# Now I will create a single big dataset containing all homicides between 2012 to 2023. First I need the DANE_code variable to be a double
+
+
+
+```{r}
+expanded_2012 <- convert_to_double(expanded_2012)
+expanded_2013 <- convert_to_double(expanded_2013)
+expanded_2014 <- convert_to_double(expanded_2014)
+expanded_2015 <- convert_to_double(expanded_2015)
+expanded_2016 <- convert_to_double(expanded_2016)
+expanded_2017 <- convert_to_double(expanded_2017)
+expanded_2018 <- convert_to_double(expanded_2018)
+expanded_2019 <- convert_to_double(expanded_2019)
+expanded_2020 <- convert_to_double(expanded_2020)
+expanded_2021 <- convert_to_double(expanded_2021)
+expanded_2022 <- convert_to_double(expanded_2022)
+expanded_2023 <- convert_to_double(expanded_2023)
+```
+
+```{r}
+#Apply caps to all municipios (there are differences)
+expanded_2022 <- expanded_2022 |> 
+  mutate(municipio = toupper(expanded_2022$municipio))
+```
+
+
+
+```{r}
+bind_rows(expanded_2012, expanded_2013, expanded_2014, expanded_2015, expanded_2016,
+                         expanded_2017, expanded_2018, expanded_2019, expanded_2020, expanded_2021,
+                         expanded_2022, expanded_2023)
+
+expanded_datasets <- list(
+  expanded_2012,
+  expanded_2013,
+  expanded_2014,
+  expanded_2015,
+  expanded_2016,
+  expanded_2017,
+  expanded_2018,
+  expanded_2019,
+  expanded_2020,
+  expanded_2021,
+  expanded_2022,
+  expanded_2023
+)
+
+# Combine all datasets into a single dataframe
+homicides_total <- bind_rows(expanded_datasets)
+
+expanded_datasets[[10]] |>
+  filter(year == "2021" & departamento == "ATLANTICO") |> 
+  group_by(municipio) |> 
+  summarize(n())
+
+
+```
+
+```{r}
+homicides_total |>
+  filter(year == "2021") |>
+  summarize(n())
+```
+
+
+
+```{r}
+homicides_total |> 
+filter(municipio %in% c("CARTAGENA (CT)", "SANTA MARTA (CT)", "BARRANQUILLA (CT)")) |> 
+  group_by(year, municipio) |> 
+  summarize(homicide_count = n()) |> 
+ggplot(aes(x = year, y = homicide_count, color = municipio, group = municipio)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Trends of Homicides in CARTAGENA, SANTA MARTA, and BARRANQUILLA",
+       x = "Year",
+       y = "Number of Homicides") +
+  theme_minimal()
+```
+
