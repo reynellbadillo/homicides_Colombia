@@ -15,7 +15,9 @@ library(tidyverse)
 library(tidyr)
 ```
 
-```{r}
+```{r, message=FALSE}
+hom_2010 <- read_csv("./2010.csv")
+hom_2011 <- read_csv("./2011.csv")
 hom_2012 <- read_csv("./2012.csv")
 hom_2013 <- read_csv("./2013.csv")
 hom_2014 <- read_csv("./2014.csv")
@@ -43,6 +45,8 @@ expand_data <- function(data, date_col, quantity_col, sep = "/") {
 ```
 
 ```{r}
+expanded_2010 <- expand_data(hom_2010, "date", "quantity")
+expanded_2011 <- expand_data(hom_2011, "date", "quantity")
 expanded_2012 <- expand_data(hom_2012, "date", "quantity")
 expanded_2013 <- expand_data(hom_2013, "date", "quantity")
 expanded_2014 <- expand_data(hom_2014, "date", "quantity")
@@ -60,9 +64,18 @@ expanded_2023 <- expand_data(hom_2023, "date", "quantity")
 
 # Now I will create a single big dataset containing all homicides between 2012 to 2023. First I need the DANE_code variable to be a double
 
+```{r}
+# Convert DANE_code columns to character type in each dataset
+convert_to_double <- function(df) {
+  df  |>
+    mutate(DANE_code = as.double(DANE_code))
+}
+```
 
 
 ```{r}
+expanded_2010 <- convert_to_double(expanded_2010)
+expanded_2011 <- convert_to_double(expanded_2011)
 expanded_2012 <- convert_to_double(expanded_2012)
 expanded_2013 <- convert_to_double(expanded_2013)
 expanded_2014 <- convert_to_double(expanded_2014)
@@ -86,11 +99,9 @@ expanded_2022 <- expanded_2022 |>
 
 
 ```{r}
-bind_rows(expanded_2012, expanded_2013, expanded_2014, expanded_2015, expanded_2016,
-                         expanded_2017, expanded_2018, expanded_2019, expanded_2020, expanded_2021,
-                         expanded_2022, expanded_2023)
-
 expanded_datasets <- list(
+  expanded_2010,
+  expanded_2011,
   expanded_2012,
   expanded_2013,
   expanded_2014,
@@ -108,20 +119,8 @@ expanded_datasets <- list(
 # Combine all datasets into a single dataframe
 homicides_total <- bind_rows(expanded_datasets)
 
-expanded_datasets[[10]] |>
-  filter(year == "2021" & departamento == "ATLANTICO") |> 
-  group_by(municipio) |> 
-  summarize(n())
-
 
 ```
-
-```{r}
-homicides_total |>
-  filter(year == "2021") |>
-  summarize(n())
-```
-
 
 
 ```{r}
